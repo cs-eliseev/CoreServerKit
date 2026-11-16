@@ -41,10 +41,17 @@ sudo ./server-init.sh [OPTION]
 | `-s`, `--security`  | Security hardening (SSH, UFW, fail2ban)        |
 | `-t`, `--speedtest` | Install Ookla Speedtest CLI                    |
 | `-U`, `--update`    | Update the system                              |
+| `-c`, `--cert`      | Issue a Let's Encrypt SSL certificate (nginx)  |
 | `-V`, `--verify`    | Verify current configuration                   |
 | `-d`, `--defaults`  | Full cycle non-interactively with all defaults |
 
 Without options runs the full cycle interactively.
+
+In `--defaults` mode the certificate step runs only when the domain is passed via environment:
+
+```bash
+sudo CERT_DOMAIN=example.com CERT_EMAIL=admin@example.com ./server-init.sh --defaults
+```
 
 ## What it does
 
@@ -56,7 +63,9 @@ Without options runs the full cycle interactively.
 
 **Update** — runs `apt update` + `apt upgrade`.
 
-**Verify** — checks user, SSH keys, sshd config, UFW, fail2ban, and speedtest.
+**SSL certificate** — asks for a domain and email, installs nginx and certbot, creates an nginx site (HTTP → HTTPS redirect, HTTP/2, HSTS, gzip), issues a Let's Encrypt certificate and enables auto-renewal. Opens `443/tcp` in UFW; `80/tcp` is opened only for the duration of the domain validation (including renewals) and closed afterwards.
+
+**Verify** — checks user, SSH keys, sshd config, UFW, fail2ban, speedtest, and SSL certificates.
 
 ## Logs
 

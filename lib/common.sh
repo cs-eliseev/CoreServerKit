@@ -96,8 +96,8 @@ wait_for_apt_lock() {
     local timeout_min=$((timeout / 60))
     local waited=0
     local holder=""
-    local proc_name = ""
-    local holder_pid = ""
+    local proc_name=""
+    local holder_pid=""
 
     while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/cache/apt/archives/lock 2>&1; do
         if [[ "${waited}" -ge "${timeout}" ]]; then

@@ -8,6 +8,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     source "${SCRIPT_DIR}/lib/validation.sh"
     source "${SCRIPT_DIR}/lib/config.sh"
     source "${SCRIPT_DIR}/lib/security.sh"
+    source "${SCRIPT_DIR}/lib/cert.sh"
 fi
 
 verify_user() {
@@ -139,6 +140,55 @@ verify_speedtest_status() {
     echo ""
 }
 
+verify_cert_status() {
+    echo "--- SSL Certificate Verification ---"
+
+    if command -v nginx >/dev/null 2>&1; then
+        local nginx_state
+        nginx_state="$(systemctl is-active nginx 2>/dev/null || true)"
+        echo "  nginx:        installed (${nginx_state:-unknown})"
+    else
+        echo "  nginx:        not installed"
+    fi
+
+    if ! command -v certbot >/dev/null 2>&1; then
+        echo "  certbot:      not installed"
+        echo ""
+        return 0
+    fi
+
+    local found=false
+    local cert_path
+    for cert_path in "${LETSENCRYPT_LIVE_DIR}"/*/fullchain.pem; do
+        if [[ ! -f "${cert_path}" ]]; then
+            continue
+        fi
+
+        local cert_domain
+        cert_domain="$(basename "$(dirname "${cert_path}")")"
+        local expires
+        expires="$(openssl x509 -enddate -noout -in "${cert_path}" 2>/dev/null | cut -d= -f2)"
+        echo "  ${cert_domain}: expires ${expires:-unknown}"
+        found=true
+    done
+
+    if [[ "${found}" == false ]]; then
+        echo "  Certificates: none issued"
+    fi
+
+    local renewal="not configured"
+    local timer
+    for timer in certbot.timer certbot-renew.timer; do
+        if systemctl is-enabled "${timer}" >/dev/null 2>&1; then
+            renewal="${timer} ($(systemctl is-active "${timer}" 2>/dev/null || true))"
+            break
+        fi
+    done
+    echo "  Auto-renewal: ${renewal}"
+
+    echo ""
+}
+
 verify_update_status() {
     echo "--- System Update Verification ---"
 
@@ -173,6 +223,7 @@ run_verify() {
             verify_security
             verify_speedtest_status
             verify_update_status
+            verify_cert_status
             ;;
         user)
             verify_user
@@ -188,6 +239,9 @@ run_verify() {
             ;;
         update)
             verify_update_status
+            ;;
+        cert)
+            verify_cert_status
             ;;
         *)
             log_warn "Unknown verification scope: ${scope}"
