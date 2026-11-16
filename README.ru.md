@@ -41,10 +41,17 @@ sudo ./server-init.sh [OPTION]
 | `-s`, `--security`  | Настройка безопасности (SSH, UFW, fail2ban)         |
 | `-t`, `--speedtest` | Установить Ookla Speedtest CLI                      |
 | `-U`, `--update`    | Обновить систему                                    |
+| `-c`, `--cert`      | Выписать SSL-сертификат Let's Encrypt (nginx)       |
 | `-V`, `--verify`    | Проверить текущую конфигурацию                      |
 | `-d`, `--defaults`  | Полный цикл без вопросов, все значения по умолчанию |
 
 Без опций запускается полный цикл в интерактивном режиме.
+
+В режиме `--defaults` шаг с сертификатом выполняется, только если домен передан через окружение:
+
+```bash
+sudo CERT_DOMAIN=example.com CERT_EMAIL=admin@example.com ./server-init.sh --defaults
+```
 
 ## Что делает скрипт
 
@@ -56,7 +63,9 @@ sudo ./server-init.sh [OPTION]
 
 **Обновление** — `apt update` + `apt upgrade`.
 
-**Верификация** — проверяет пользователя, SSH-ключи, конфиг sshd, UFW, fail2ban, speedtest.
+**SSL-сертификат** — спрашивает домен и email, ставит nginx и certbot, создаёт сайт nginx (редирект HTTP → HTTPS, HTTP/2, HSTS, gzip), выписывает сертификат Let's Encrypt и включает автопродление. Открывает `443/tcp` в UFW; `80/tcp` открывается только на время проверки домена (в том числе при продлении) и закрывается обратно.
+
+**Верификация** — проверяет пользователя, SSH-ключи, конфиг sshd, UFW, fail2ban, speedtest, SSL-сертификаты.
 
 ## Логи
 

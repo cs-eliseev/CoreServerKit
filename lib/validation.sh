@@ -60,3 +60,31 @@ validate_ssh_key() {
 
     return 1
 }
+
+validate_domain() {
+    local domain="$1"
+
+    if [[ "${#domain}" -gt 253 ]]; then
+        return 1
+    fi
+
+    if ! [[ "${domain}" =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,}$ ]]; then
+        return 1
+    fi
+
+    if [[ "${domain}" == *..* ]]; then
+        return 1
+    fi
+
+    return 0
+}
+
+validate_email() {
+    local email="$1"
+
+    if ! [[ "${email}" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then
+        return 1
+    fi
+
+    return 0
+}
